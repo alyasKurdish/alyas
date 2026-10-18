@@ -1,0 +1,17 @@
+/* Receipt printing: 80 mm thermal paper (also fine on A4). Only #print-root is printed. */
+#print-root { display: none; }
+
+@media print {
+  @page { size: 80mm auto; margin: 0; }
+  html, body { background: #fff !important; margin: 0; padding: 0; }
+  body > *:not(#print-root) { display: none !important; }
+  #print-root { display: block !important; }
+  #print-root .print-sheet { width: 74mm; margin: 0 auto; padding: 3mm 0 6mm; }
+  #print-root .receipt { max-width: none; width: 100%; padding: 0; box-shadow: none; font-size: 11pt; line-height: 1.5; color: #000; }
+  #print-root .receipt::after { display: none; }
+  #print-root .rc__shop { font-size: 15pt; }
+  #print-root .rc__row--grand { font-size: 13pt; }
+  #print-root .rc__head, #print-root .rc__info, #print-root .rc__items, #print-root .rc__foot { border-color: #000; }
+  #print-root .rc__meta, #print-root .rc__qty, #print-root .rc__foot, #print-root .rc__note, #print-root .rc__info > div > span:first-child { color: #000; }
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}

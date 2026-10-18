@@ -1,0 +1,92 @@
+/* ZERO PHONE POS — design tokens and base.
+   Pine green + paper + one sun-yellow action colour. Kurdish (Arabic script): never add letter-spacing or text-transform. */
+
+:root {
+  --pine-900: #08362B;
+  --pine-800: #0B4435;
+  --pine-700: #0F5A47;
+  --pine-600: #12705A;
+  --pine-500: #12805F;
+  --pine-200: #BFD9CF;
+  --pine-100: #DCEBE5;
+  --pine-50:  #EDF5F1;
+
+  --sun-500: #F2B632;
+  --sun-600: #E3A51C;
+  --sun-100: #FCEFC9;
+  --amber-ink: #7A5200;
+
+  --paper:  #F3F6F4;
+  --white:  #FFFFFF;
+  --ink:    #1C2B27;
+  --ink-2:  #3B4D47;
+  --muted:  #5A6B65;
+  --line:   #D7E0DC;
+  --line-2: #E8EEEB;
+  --input-line: #C3CFCA;
+
+  --red-600: #C2362D;
+  --red-700: #A52C24;
+  --red-100: #F9E3E0;
+  --ok-text: #0A6B3C;
+
+  /* chart series (validated: scripts/validate_palette.js, light surface #ffffff) */
+  --series-1: #12805F;   /* revenue */
+  --series-2: #C98500;   /* profit  */
+  --chart-grid: #E3EAE6;
+  --chart-axis: #C5D1CB;
+
+  --r-sm: 6px;
+  --r-md: 8px;
+  --r-lg: 12px;
+  --r-xl: 16px;
+
+  --shadow-pop: 0 18px 40px -16px rgba(8, 54, 43, .45), 0 2px 6px rgba(8, 54, 43, .08);
+  --shadow-lift: 0 8px 20px -10px rgba(8, 54, 43, .35);
+
+  --font-ui: "Inter", "Noto Sans Arabic", "Segoe UI", Tahoma, "DejaVu Sans", system-ui, sans-serif;
+  --font-display: "Inter", "Noto Kufi Arabic", "Noto Sans Arabic", "Segoe UI", Tahoma, "DejaVu Sans", system-ui, sans-serif;
+
+  --sidebar-w: 232px;
+  --rail-w: 84px;
+  --ease: cubic-bezier(.2, .7, .2, 1);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+html.has-modal { overflow: hidden; }
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: 15px;
+  line-height: 1.7;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3, h4, p { margin: 0; }
+h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; line-height: 1.45; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+a { color: var(--pine-600); }
+img, svg { display: block; max-width: 100%; }
+::selection { background: var(--pine-200); }
+[hidden] { display: none !important; }
+
+:focus-visible { outline: 3px solid rgba(18, 128, 95, .38); outline-offset: 2px; border-radius: 4px; }
+input:focus-visible, select:focus-visible, textarea:focus-visible { outline: none; }
+
+.sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+/* numbers always read left-to-right, even inside Kurdish sentences */
+.num { direction: ltr; unicode-bidi: isolate; display: inline-block; font-family: "Inter", var(--font-ui); }
+.num--neg { color: var(--red-600); }
+.num-unit { white-space: nowrap; }
+.unit { font-size: .78em; color: var(--muted); font-weight: 500; }
+
+* { scrollbar-width: thin; scrollbar-color: #B7C5BF transparent; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; scroll-behavior: auto !important; }
+}
