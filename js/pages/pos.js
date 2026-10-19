@@ -3,7 +3,6 @@ import * as api from '../api.js';
 import { h, icon, button, withBusy, toast, numberInput, searchBox, confirmDialog, emptyState, errorState, loading, mount, badge } from '../ui.js';
 import { money, fold, uuid, fmtDay, todayKey } from '../fmt.js';
 import { errText } from '../i18n.js';
-import { serviceForm } from '../servicesform.js';
 import { showSaleDone, printReceipt, autoPrintOn } from '../receipt.js';
 
 const CART_KEY = 'zp.cart.v1';
@@ -509,16 +508,11 @@ export default async function pos(root, ctx) {
       noteInput,
       sellBtn));
 
-  const svcBox = h('details', { class: 'svcbox' },
-    h('summary', { class: 'svcbox__head' }, icon('wrench', 18), h('span', null, 'خزمەتگوزاری'), h('small', null, 'چاکردنەوە · کارت'), icon('chevron', 18)),
-    serviceForm().el);
-  svcBox.open = !matchMedia('(max-width: 899px)').matches;
-
   mount(root, h('div', { class: 'pos' },
     h('section', { class: 'pos__catalog', 'aria-label': 'کاڵاکان' },
       h('div', { class: 'pos__bar' }, search, refreshBtn),
       chips, tiles, catalogMsg),
-    h('aside', { class: 'pos__cart', 'aria-label': 'سەبەتە' }, svcBox, slip),
+    h('aside', { class: 'pos__cart', 'aria-label': 'سەبەتە' }, slip),
     fab));
   root.classList.add('pos-root'); // the holder carries the state classes (cart sheet open / locked)
 
