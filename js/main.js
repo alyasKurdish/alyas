@@ -12,6 +12,7 @@ const ROUTES = [
   { id: 'dashboard', title: 'داشبۆرد', icon: 'dashboard', roles: ['admin'], load: () => import('./pages/dashboard.js') },
   { id: 'pos', title: 'فرۆشتن', icon: 'sale', roles: ['admin', 'cashier'], load: () => import('./pages/pos.js') },
   { id: 'sales', title: 'وەسڵەکان', cashierTitle: 'وەسڵەکانم', icon: 'receipt', roles: ['admin', 'cashier'], load: () => import('./pages/sales.js') },
+  { id: 'services', title: 'خزمەتگوزاری', icon: 'wrench', roles: ['admin', 'cashier'], load: () => import('./pages/services.js') },
   { id: 'products', title: 'کاڵاکان', icon: 'box', roles: ['admin'], load: () => import('./pages/products.js') },
   { id: 'inventory', title: 'کۆگا', icon: 'stock', roles: ['admin'], load: () => import('./pages/inventory.js') },
   { id: 'reports', title: 'ڕاپۆرتەکان', icon: 'report', roles: ['admin'], load: () => import('./pages/reports.js') },
