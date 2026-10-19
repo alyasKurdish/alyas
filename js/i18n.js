@@ -46,7 +46,11 @@ const ERRORS = {
   NOT_AUTHORIZED: same(NOT_ALLOWED),
   ADMIN_ONLY: same('ئەم کارە تەنها بۆ ئادمینە.'),
   42501: same(NOT_ALLOWED),
-  PGRST202: same('فایلی schema.sql هێشتا جێبەجێ نەکراوە یان تەواو نییە. لە Supabase ← SQL Editor دووبارە جێبەجێی بکە.'),
+  PGRST202: same('ئەم کارە لە سێرڤەر نییە. دڵنیابە کۆدی Worker نوێترین وەشانە (worker/worker.js) و دووبارە Deploy ی بکە.'),
+  BAD_INPUT: same('زانیارییەکە دروست نییە. بیپشکنەرەوە و دووبارە هەوڵبدەرەوە.'),
+  SETTINGS_INVALID: same('ڕێکخستنەکان دروست نین: ڕێژەی داشکاندن دەبێت لە 0 تا 100 بێت و ماوەی گەڕاندنەوە لە 0 تا 3650 ڕۆژ.'),
+  DB_ERROR: same('سێرڤەر نەیتوانی بگاتە داتابەیس. چەند چرکەیەک چاوەڕێ بکە و دووبارە هەوڵبدەرەوە.'),
+  SERVER_NOT_CONFIGURED: same('سێرڤەرەکە ڕێکنەخراوە: لە Cloudflare ← Worker ← Settings ← Variables دەبێت TURSO_URL و TURSO_TOKEN دابنرێن.'),
   PGRST301: same('کاتی چوونەژوورەوەکەت تەواو بوو. تکایە دووبارە بچۆ ژوورەوە.'),
 
   EMPTY_CART: same('سەبەتەکە بەتاڵە.'),

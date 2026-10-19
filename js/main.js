@@ -60,7 +60,7 @@ export async function refreshSettings() {
 function showSetupHelp() {
   const missing = api.configIssues();
   mount(app, h('div', { class: 'boot' }, h('div', { class: 'boot__card' },
-    h('h1', { class: 'login__title' }, 'پەیوەندی بە Supabase ڕێکنەخراوە'),
+    h('h1', { class: 'login__title' }, 'پەیوەندی بە سێرڤەر ڕێکنەخراوە'),
     h('p', null, 'فایلی ', h('span', { class: 'code' }, 'config.js'), ' بکەرەوە و ئەم ڕێکخستنانە بنووسە:'),
     h('ul', { class: 'boot__list' }, missing.map((k) => h('li', null, h('span', { class: 'code' }, k)))),
     h('p', { class: 'muted' }, 'هەنگاوەکان لە فایلی ', h('span', { class: 'code' }, 'README.md'), ' ڕوونکراونەتەوە.'))));

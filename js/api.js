@@ -43,10 +43,10 @@ function loginDomain() {
 /** the names of the config.js settings that are still missing or unusable */
 export function configIssues() {
   const out = [];
-  const u = String(cfg.SUPABASE_URL || '');
+  const u = String(cfg.API_URL || cfg.SUPABASE_URL || '');
   const k = String(cfg.SUPABASE_ANON_KEY || '');
-  if (!/^https?:\/\//.test(u) || placeholder(u)) out.push('SUPABASE_URL');
-  if (k.length <= 20 || placeholder(k)) out.push('SUPABASE_ANON_KEY');
+  if (!/^https?:\/\//.test(u) || placeholder(u)) out.push(cfg.API_URL ? 'API_URL' : 'SUPABASE_URL');
+  if (!cfg.API_URL && (k.length <= 20 || placeholder(k))) out.push('SUPABASE_ANON_KEY'); // only the Supabase backend needs a key
   if (!ownerEmail() && !loginDomain()) out.push('LOGIN_EMAIL');
   return out;
 }
@@ -119,7 +119,8 @@ export function adoptSession(s) {
 
 /* ---------------- http ---------------- */
 function baseHeaders() {
-  const h = { apikey: cfg.SUPABASE_ANON_KEY, 'Content-Type': 'application/json' };
+  const h = { 'Content-Type': 'application/json' };
+  if (cfg.SUPABASE_ANON_KEY) h.apikey = cfg.SUPABASE_ANON_KEY;
   return h;
 }
 function parseJSON(t) {
@@ -158,7 +159,7 @@ async function http(path, { method = 'POST', body, headers } = {}) {
   let res;
   let text;
   try {
-    res = await fetch(String(cfg.SUPABASE_URL).replace(/\/+$/, '') + path, {
+    res = await fetch(String(cfg.API_URL || cfg.SUPABASE_URL).replace(/\/+$/, '') + path, {
       method,
       headers: headers || baseHeaders(),
       body: body === undefined ? undefined : JSON.stringify(body),
