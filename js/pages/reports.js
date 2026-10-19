@@ -11,6 +11,7 @@ const TABS = [
   { id: 'sold', label: 'فرۆشراو' },
   { id: 'unsold', label: 'نەفرۆشراو' },
   { id: 'daily', label: 'ڕۆژانە' },
+  { id: 'services', label: 'خزمەتگوزاری' },
   { id: 'cashiers', label: 'کاشێرەکان' },
   { id: 'returns', label: 'گەڕاوەکان' },
 ];
@@ -119,6 +120,46 @@ export default async function reports(root, ctx) {
           { label: 'سەرمایەی گیراو', value: capital, unit: 'دینار', tone: capital ? 'warn' : undefined, sub: 'بە نرخی کڕین' },
         ]),
         h('div', { class: 'toolbar' }, only),
+        t.el,
+      ];
+    },
+
+    async services(r) {
+      const [sum, sv, rows] = await Promise.all([
+        api.rpc('report_summary', { p_from: r.from, p_to: r.to }),
+        api.rpc('service_summary', { p_from: r.from, p_to: r.to }),
+        api.rpc('report_daily', { p_from: r.from, p_to: r.to }),
+      ]);
+      const svDay = new Map((sv.daily || []).map((x) => [x.day, x]));
+      const list = rows.map((d) => ({ day: d.day, goods: d.profit, repair: svDay.get(d.day)?.repair || 0, card: svDay.get(d.day)?.card || 0 }))
+        .map((d) => ({ ...d, total: d.goods + d.repair + d.card }));
+      const t = ledger({
+        cards: true,
+        rowKey: (d) => d.day,
+        defaultSort: { key: 'day', dir: 'desc' },
+        empty: 'هیچ داتایەک نییە.',
+        columns: [
+          { key: 'day', label: 'ڕۆژ', sort: true, render: (d) => h('span', null, fmtDateNum(d.day), h('span', { class: 'sub' }, weekdayOf(d.day))) },
+          { key: 'goods', label: 'قازانجی کاڵا', num: true, sort: true },
+          { key: 'repair', label: 'چاکردنەوە', num: true, sort: true },
+          { key: 'card', label: 'کارت', num: true, sort: true },
+          { key: 'total', label: 'کۆی گشتی', num: true, sort: true, render: (d) => profitCell(d.total) },
+        ],
+        footer: (d) => ({ day: `${money(d.length)} ڕۆژ`, goods: sum_(d, 'goods'), repair: sum_(d, 'repair'), card: sum_(d, 'card'), total: sum_(d, 'total') }),
+      });
+      t.update(list);
+      data = {
+        name: `profit_split_${r.from}_${r.to}`,
+        headers: ['ڕۆژ', 'قازانجی کاڵا', 'قازانجی چاکردنەوە', 'قازانجی کارت', 'کۆی گشتی'],
+        rows: list.map((d) => [d.day, d.goods, d.repair, d.card, d.total]),
+      };
+      return [
+        kpiBand([
+          { label: 'قازانجی کاڵا', value: sum.profit, unit: 'دینار' },
+          { label: 'قازانجی چاکردنەوە', value: sv.repair_profit, unit: 'دینار', sub: `${money(sv.repair_count)} جار` },
+          { label: 'قازانجی کارت', value: sv.card_profit, unit: 'دینار', sub: `${money(sv.card_count)} کارت` },
+          { label: 'کۆی گشتی قازانج', value: sum.profit + sv.profit, unit: 'دینار', tone: 'good' },
+        ]),
         t.el,
       ];
     },
