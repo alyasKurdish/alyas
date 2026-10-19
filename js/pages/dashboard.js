@@ -10,10 +10,12 @@ import { openAddStock } from '../productdialogs.js';
 
 const REVENUE = '#12805F';
 const PROFIT = '#C98500';
+const REPAIR = '#3B6FB6';
+const CARD = '#8A4FB0';
 
 function bucketize(daily, days) {
   if (days <= 45) {
-    return { gran: 'بە ڕۆژ', cats: daily.map((d) => ({ label: fmtDayShort(d.day), long: fmtLongDate(d.day) })), revenue: daily.map((d) => d.revenue), profit: daily.map((d) => d.profit) };
+    return { gran: 'بە ڕۆژ', cats: daily.map((d) => ({ label: fmtDayShort(d.day), long: fmtLongDate(d.day) })), revenue: daily.map((d) => d.revenue), profit: daily.map((d) => d.profit), repair: daily.map((d) => d.repair || 0), card: daily.map((d) => d.card || 0) };
   }
   const groups = [];
   if (days <= 200) {
@@ -23,6 +25,8 @@ function bucketize(daily, days) {
       cats: groups.map((g) => ({ label: fmtDayShort(g[0].day), long: `${fmtDay(g[0].day)} — ${fmtDay(g[g.length - 1].day)}` })),
       revenue: groups.map((g) => g.reduce((a, d) => a + d.revenue, 0)),
       profit: groups.map((g) => g.reduce((a, d) => a + d.profit, 0)),
+      repair: groups.map((g) => g.reduce((a, d) => a + (d.repair || 0), 0)),
+      card: groups.map((g) => g.reduce((a, d) => a + (d.card || 0), 0)),
     };
   }
   const map = new Map();
@@ -37,6 +41,8 @@ function bucketize(daily, days) {
     cats: ks.map((k) => ({ label: MONTHS[Number(k.slice(5)) - 1], long: `${MONTHS[Number(k.slice(5)) - 1]} ${k.slice(0, 4)}` })),
     revenue: ks.map((k) => map.get(k).reduce((a, d) => a + d.revenue, 0)),
     profit: ks.map((k) => map.get(k).reduce((a, d) => a + d.profit, 0)),
+    repair: ks.map((k) => map.get(k).reduce((a, d) => a + (d.repair || 0), 0)),
+    card: ks.map((k) => map.get(k).reduce((a, d) => a + (d.card || 0), 0)),
   };
 }
 
@@ -53,6 +59,8 @@ export default async function dashboard(root, ctx) {
   const onboarding = h('div');
 
   const daily = columnChart({ title: 'فرۆشتن و قازانج', subtitle: '', unit: 'دینار', empty: 'هیچ فرۆشتنێک نییە لەم ماوەیەدا.' });
+  const splitBox = h('div');
+  const splitChart = columnChart({ title: 'قازانج بەپێی جۆر', subtitle: '', unit: 'دینار', empty: 'هیچ قازانجێک نییە لەم ماوەیەدا.' });
   const rank = rankChart({ title: 'باشترین کاڵاکان', color: REVENUE, valueLabel: 'فرۆشتن', empty: 'هیچ فرۆشتنێک نییە لەم ماوەیەدا.' });
   const metricSeg = segmented({ label: 'پێوەر', value: 'revenue', options: [{ value: 'revenue', label: 'بە فرۆشتن' }, { value: 'profit', label: 'بە قازانج' }], onChange: (v) => { metric = v; paintRank(); } });
   const attention = h('div', { class: 'dash__attention' });
@@ -74,13 +82,15 @@ export default async function dashboard(root, ctx) {
   async function loadToday() {
     const t = todayKey();
     try {
-      const s = await api.rpc('report_summary', { p_from: t, p_to: t });
+      const [s, sv] = await Promise.all([api.rpc('report_summary', { p_from: t, p_to: t }), api.rpc('service_summary', { p_from: t, p_to: t })]);
       mount(todayBand, h('section', { class: 'today' },
         h('div', { class: 'today__head' }, h('h2', null, 'ئەمڕۆ'), h('span', { class: 'muted' }, fmtLongDate(t))),
         kpiBand([
           { label: 'فرۆشتنی ئەمڕۆ', value: s.revenue, unit: 'دینار', sub: `${money(s.receipts)} وەسڵ · ${money(s.items)} دانە` },
           { label: 'قازانجی ئەمڕۆ', value: s.profit, unit: 'دینار', tone: s.profit < 0 ? 'bad' : 'good', sub: s.revenue > 0 ? `ڕێژە ${pct(margin(s.profit, s.revenue), 1)}` : 'هێشتا فرۆشتن نییە' },
           s.refunds > 0 ? { label: 'گەڕاوەی ئەمڕۆ', value: s.refunds, unit: 'دینار', tone: 'warn', sub: `${money(s.refund_count)} گەڕاندنەوە` } : { label: 'هاتنی کاڵا ئەمڕۆ', value: s.purchases_spent, unit: 'دینار', sub: 'کۆی نرخی کڕین' },
+          { label: 'قازانجی خزمەتگوزاری ئەمڕۆ', value: sv.profit, unit: 'دینار', sub: `چاکردنەوە ${money(sv.repair_profit)} · کارت ${money(sv.card_profit)}` },
+          { label: 'کۆی قازانجی ئەمڕۆ', value: s.profit + sv.profit, unit: 'دینار', tone: s.profit + sv.profit < 0 ? 'bad' : 'good', sub: 'کاڵا + خزمەتگوزاری' },
           { label: 'سەرمایەی ماوە لە کۆگا', value: s.stock_value, unit: 'دینار', sub: `${money(s.stock_units)} دانە` },
         ], { className: 'kpi--today' })));
       return s;
@@ -97,17 +107,22 @@ export default async function dashboard(root, ctx) {
     const prev = previousRange(r);
     content.classList.add('is-stale');
     try {
-      const [cur, before, days, prods, unsold, all] = await Promise.all([
+      const [cur, before, days, prods, unsold, all, sv] = await Promise.all([
         api.rpc('report_summary', { p_from: r.from, p_to: r.to }),
         api.rpc('report_summary', { p_from: prev.from, p_to: prev.to }),
         api.rpc('report_daily', { p_from: r.from, p_to: r.to }),
         api.rpc('report_products', { p_from: r.from, p_to: r.to }),
         api.rpc('report_unsold', { p_from: r.from, p_to: r.to }),
         api.rpc('admin_products'),
+        api.rpc('service_summary', { p_from: r.from, p_to: r.to }),
       ]);
       if (!guard.isCurrent(k)) return;
       paintHero(cur, before, r, prev);
-      const b = bucketize(days, rangeDays(r));
+      const svDay = new Map((sv.daily || []).map((x) => [x.day, x]));
+      const merged = days.map((d) => ({ ...d, repair: svDay.get(d.day)?.repair || 0, card: svDay.get(d.day)?.card || 0 }));
+      paintSplit(cur, sv, merged, r);
+      const b = bucketize(merged, rangeDays(r));
+
       daily.update({
         title: 'فرۆشتن و قازانج',
         subtitle: `${b.gran} — دوای لابردنی گەڕاوەکان`,
@@ -126,6 +141,26 @@ export default async function dashboard(root, ctx) {
     }
   }
 
+  function paintSplit(cur, sv, merged, r) {
+    const total = cur.profit + sv.profit;
+    const b = bucketize(merged, rangeDays(r));
+    const goods = b.profit;
+    mount(splitBox, h('section', { class: 'panel panel--chart svc-split' },
+      kpiBand([
+        { label: 'قازانجی کاڵا', value: cur.profit, unit: 'دینار', tone: cur.profit < 0 ? 'bad' : undefined },
+        { label: 'قازانجی چاکردنەوە', value: sv.repair_profit, unit: 'دینار', sub: `${money(sv.repair_count)} جار` },
+        { label: 'قازانجی کارت', value: sv.card_profit, unit: 'دینار', sub: `${money(sv.card_count)} کارت` },
+        { label: 'کۆی گشتی قازانج', value: total, unit: 'دینار', tone: total < 0 ? 'bad' : 'good', sub: 'کاڵا + چاکردنەوە + کارت' },
+      ], { className: 'kpi--compact' }),
+      splitChart.el));
+    splitChart.update({
+      title: 'قازانج بەپێی جۆر',
+      subtitle: `${b.gran} — کاڵا، چاکردنەوە، کارت`,
+      categories: b.cats,
+      series: [{ key: 'goods', label: 'کاڵا', color: PROFIT, values: goods }, { key: 'repair', label: 'چاکردنەوە', color: REPAIR, values: b.repair }, { key: 'card', label: 'کارت', color: CARD, values: b.card }],
+    });
+  }
+
   function paintHero(cur, before, r, prev) {
     const dProfit = delta(cur.profit, before.profit);
     const dRev = delta(cur.revenue, before.revenue);
@@ -133,7 +168,7 @@ export default async function dashboard(root, ctx) {
     const chip = (d) => (d ? h('span', { class: `chip-delta chip-delta--${d.tone}` }, d.text) : null);
     mount(heroBox, h('section', { class: 'hero' },
       h('div', { class: 'hero__main' },
-        h('div', { class: 'hero__label' }, 'قازانجی خاڵیص'),
+        h('div', { class: 'hero__label' }, 'قازانجی کاڵا (خاڵیص)'),
         h('div', { class: 'hero__range' }, r.label),
         h('div', { class: `hero__value${cur.profit < 0 ? ' is-neg' : ''}` }, h('span', { class: 'num' }, money(cur.profit)), h('span', { class: 'unit' }, ' دینار')),
         h('div', { class: 'hero__meta' }, chip(dProfit), h('span', { class: 'muted', title: rangeLabel(prev) }, 'بەرامبەر ماوەی پێشوو')),
@@ -192,6 +227,7 @@ export default async function dashboard(root, ctx) {
     todayBand,
     h('div', { class: 'toolbar toolbar--range' }, h('h2', { class: 'toolbar__title' }, 'ماوەی هەڵبژێردراو'), range.el),
     heroBox,
+    splitBox,
     content));
   mount(content, h('div', { class: 'panel panel--chart' }, daily.el),
     h('div', { class: 'grid-2' },
