@@ -20,10 +20,10 @@ export function serviceForm({ onSaved } = {}) {
   const note = textInput({ maxlength: 120 });
   note.setAttribute('aria-label', 'تێبینی');
   const hint = h('p', { class: 'svcf__hint' });
-  const save = button('تۆمارکردن', { icon: 'check', className: 'svcf__save', onClick: () => submit() });
+  const save = button('تۆمارکردن', { className: 'svcf__save', onClick: () => submit() });
 
   const kindBtns = Object.keys(KIND).map((k) => h('button', { type: 'button', class: 'svcf__kind', dataset: { kind: k }, onclick: () => setKind(k) },
-    icon(k === 'repair' ? 'wrench' : 'tag', 22), h('span', null, KIND[k])));
+    KIND[k]));
 
   function setKind(k) {
     kind = k;
