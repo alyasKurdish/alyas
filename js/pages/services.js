@@ -1,14 +1,13 @@
 // Services: phone repairs and phone cards. Only the shop's own profit is recorded (not the part cost / card face value).
 // Cashier: add entries, sees his own entries of today. Admin: any period, filters, void, CSV.
 import * as api from '../api.js';
-import { h, icon, button, withBusy, toast, selectBox, segmented, ledger, badge, numberInput, textInput, field, confirmDialog, openModal, textArea, loading, mount } from '../ui.js';
-import { money, fmtDateNum, fmtTime, fmtDay, todayKey, downloadCSV, uuid } from '../fmt.js';
+import { h, button, withBusy, toast, selectBox, ledger, badge, openModal, textArea, loading, mount } from '../ui.js';
+import { money, fmtDateNum, fmtTime, fmtDay, todayKey, downloadCSV } from '../fmt.js';
 import { errText } from '../i18n.js';
+import { serviceForm, KIND } from '../servicesform.js';
 import { pageHead, kpiBand, latest } from '../pagekit.js';
 import { rangeControl } from '../range.js';
 
-const KIND = { repair: 'چاکردنەوە', card: 'کارت' };
-const QUICK = { card: [350, 450], repair: [] };
 const PAGE = 200;
 
 export default async function services(root, ctx) {
@@ -16,67 +15,15 @@ export default async function services(root, ctx) {
   const isAdmin = state.profile.role === 'admin';
   const guard = latest();
 
-  let kind = 'repair';
   let rows = [];
   let totals = null;
   let kindFilter = '';
   let cashier = '';
-  let pendingId = uuid(); // one id per entry, so a retry after a network error never records it twice
 
   const range = isAdmin ? rangeControl({ initial: 'today', onChange: () => reload() }) : null;
 
-  /* ---------- add form ---------- */
-  const amount = numberInput({ placeholder: 'قازانجی دووکان' });
-  amount.setAttribute('aria-label', 'قازانجی دووکان');
-  const title = textInput({ placeholder: 'تێبینی (ئارەزوومەندانە)', maxlength: 120 });
-  title.setAttribute('aria-label', 'تێبینی');
-  const quick = h('div', { class: 'svc-quick' });
-  const hint = h('div', { class: 'field__hint' });
-  const save = button('تۆمارکردن', { icon: 'check', onClick: () => submit(save) });
-  const kindSeg = segmented({
-    label: 'جۆر', value: kind,
-    options: [{ value: 'repair', label: KIND.repair }, { value: 'card', label: KIND.card }],
-    onChange: (v) => { kind = v; paintForm(); amount.focus(); },
-  });
-
-  function paintForm() {
-    quick.replaceChildren(...QUICK[kind].map((n) => button(money(n), { variant: 'ghost', className: 'svc-quick__btn', onClick: () => quickAdd(n) })));
-    quick.hidden = !QUICK[kind].length;
-    title.placeholder = kind === 'repair' ? 'چی چاک کرایەوە؟ (ئارەزوومەندانە)' : 'جۆری کارت (ئارەزوومەندانە)';
-    hint.textContent = kind === 'repair'
-      ? 'تەنها قازانجی دەستی خۆت بنووسە (وەک ٥٬٠٠٠)، نەک نرخی پارچەکە.'
-      : 'تەنها قازانجی کارتەکە بنووسە (وەک ٣٥٠ یان ٤٥٠)، نەک نرخی کارتەکە. هەر کڕیارێک تۆمارێکی جیاوازە.';
-  }
-
-  async function add(k, n, note) {
-    const id = pendingId;
-    await api.rpc('add_service', { p_kind: k, p_profit: n, p_title: note || null, p_client_id: id });
-    pendingId = uuid();
-    toast(`${KIND[k]} تۆمار کرا: ${money(n)} دینار`);
-    await reload();
-  }
-  async function submit(btn) {
-    const n = amount.getValue();
-    if (!n || n < 1) { toast('قازانج بنووسە.', 'info'); amount.focus(); return; }
-    await withBusy(btn, async () => {
-      try {
-        await add(kind, n, title.value);
-        amount.setValue(null);
-        title.value = '';
-        amount.focus();
-      } catch (e) { toast(errText(e), 'err'); }
-    });
-  }
-  async function quickAdd(n) {
-    try { await add(kind, n, title.value); title.value = ''; } catch (e) { toast(errText(e), 'err'); }
-  }
-  amount.addEventListener('keydown', (e) => { if (e.key === 'Enter') submit(save); });
-
-  const form = h('section', { class: 'panel svc-form' },
-    h('div', { class: 'svc-form__row' }, kindSeg),
-    quick,
-    h('div', { class: 'svc-form__row svc-form__row--in' }, field('قازانج (دینار)', amount, { hint: null }), field('تێبینی', title), save),
-    hint);
+  const svcForm = serviceForm({ onSaved: () => reload() });
+  const form = h('section', { class: 'panel svc-form' }, svcForm.el);
 
   /* ---------- list ---------- */
   const cols = [
@@ -167,7 +114,6 @@ export default async function services(root, ctx) {
   }
 
   const wrap = h('div', { class: 'stack' }, loading());
-  paintForm();
   mount(root, h('div', { class: 'page' },
     pageHead({ title: 'خزمەتگوزارییەکان', sub: isAdmin ? 'چاکردنەوە و کارت — تەنها قازانجی دووکان' : `تۆمارەکانی ئەمڕۆی خۆت (${fmtDay(todayKey())})`, actions: [exportBtn] }),
     form, filters, summary, wrap));
