@@ -57,6 +57,7 @@ export default async function dashboard(root, ctx) {
   const heroBox = h('div');
   const content = h('div', { class: 'stack dash__content' });
   const onboarding = h('div');
+  const lowBox = h('div', { class: 'dash__low' });
 
   const daily = columnChart({ title: 'فرۆشتن و قازانج', subtitle: '', unit: 'دینار', empty: 'هیچ فرۆشتنێک نییە لەم ماوەیەدا.' });
   const splitBox = h('div');
@@ -88,7 +89,6 @@ export default async function dashboard(root, ctx) {
         kpiBand([
           { label: 'فرۆشتنی ئەمڕۆ', value: s.revenue, unit: 'دینار', sub: `${money(s.receipts)} وەسڵ · ${money(s.items)} دانە` },
           { label: 'قازانجی ئەمڕۆ', value: s.profit, unit: 'دینار', tone: s.profit < 0 ? 'bad' : 'good', sub: s.revenue > 0 ? `ڕێژە ${pct(margin(s.profit, s.revenue), 1)}` : 'هێشتا فرۆشتن نییە' },
-          s.refunds > 0 ? { label: 'گەڕاوەی ئەمڕۆ', value: s.refunds, unit: 'دینار', tone: 'warn', sub: `${money(s.refund_count)} گەڕاندنەوە` } : { label: 'هاتنی کاڵا ئەمڕۆ', value: s.purchases_spent, unit: 'دینار', sub: 'کۆی نرخی کڕین' },
           { label: 'قازانجی خزمەتگوزاری ئەمڕۆ', value: sv.profit, unit: 'دینار', sub: `چاکردنەوە ${money(sv.repair_profit)} · کارت ${money(sv.card_profit)}` },
           { label: 'کۆی قازانجی ئەمڕۆ', value: s.profit + sv.profit, unit: 'دینار', tone: s.profit + sv.profit < 0 ? 'bad' : 'good', sub: 'کاڵا + خزمەتگوزاری' },
           { label: 'سەرمایەی ماوە لە کۆگا', value: s.stock_value, unit: 'دینار', sub: `${money(s.stock_units)} دانە` },
@@ -207,7 +207,8 @@ export default async function dashboard(root, ctx) {
         h('span', { class: 'alist__num' }, h('span', { class: 'num' }, money(p.stock_value)), h('span', { class: 'sub' }, `${money(p.stock)} دانە`)))))
         : h('div', { class: 'alist__ok' }, icon('check', 20), 'هەموو کاڵایەکی ماوە لەم ماوەیەدا فرۆشراوە.'),
     });
-    mount(attention, lowPanel, unsoldPanel);
+    mount(lowBox, low.length ? lowPanel : '');
+    mount(attention, unsoldPanel);
   }
 
   function startCard() {
@@ -225,6 +226,7 @@ export default async function dashboard(root, ctx) {
     pageHead({ title: 'داشبۆرد', sub: `بەخێربێیت ${state.profile.full_name || ''}` }),
     onboarding,
     todayBand,
+    lowBox,
     h('div', { class: 'toolbar toolbar--range' }, h('h2', { class: 'toolbar__title' }, 'ماوەی هەڵبژێردراو'), range.el),
     heroBox,
     splitBox,
