@@ -107,7 +107,7 @@ export default async function dashboard(root, ctx) {
     const prev = previousRange(r);
     content.classList.add('is-stale');
     try {
-      const [cur, before, days, prods, unsold, all, sv] = await Promise.all([
+      const [cur, before, days, prods, unsold, all, sv, svBefore] = await Promise.all([
         api.rpc('report_summary', { p_from: r.from, p_to: r.to }),
         api.rpc('report_summary', { p_from: prev.from, p_to: prev.to }),
         api.rpc('report_daily', { p_from: r.from, p_to: r.to }),
@@ -115,14 +115,14 @@ export default async function dashboard(root, ctx) {
         api.rpc('report_unsold', { p_from: r.from, p_to: r.to }),
         api.rpc('admin_products'),
         api.rpc('service_summary', { p_from: r.from, p_to: r.to }),
+        api.rpc('service_summary', { p_from: prev.from, p_to: prev.to }),
       ]);
       if (!guard.isCurrent(k)) return;
-      paintHero(cur, before, r, prev);
+      paintHero(cur, before, r, prev, sv, svBefore);
       const svDay = new Map((sv.daily || []).map((x) => [x.day, x]));
       const merged = days.map((d) => ({ ...d, repair: svDay.get(d.day)?.repair || 0, card: svDay.get(d.day)?.card || 0 }));
       paintSplit(cur, sv, merged, r);
       const b = bucketize(merged, rangeDays(r));
-
       daily.update({
         title: 'فرۆشتن و قازانج',
         subtitle: `${b.gran} — دوای لابردنی گەڕاوەکان`,
@@ -161,20 +161,24 @@ export default async function dashboard(root, ctx) {
     });
   }
 
-  function paintHero(cur, before, r, prev) {
-    const dProfit = delta(cur.profit, before.profit);
+  function paintHero(cur, before, r, prev, sv, svBefore) {
+    const total = cur.profit + sv.profit;
+    const dProfit = delta(total, before.profit + svBefore.profit);
     const dRev = delta(cur.revenue, before.revenue);
     const avg = cur.receipts > 0 ? Math.round(cur.revenue / cur.receipts) : 0;
     const chip = (d) => (d ? h('span', { class: `chip-delta chip-delta--${d.tone}` }, d.text) : null);
     mount(heroBox, h('section', { class: 'hero' },
       h('div', { class: 'hero__main' },
-        h('div', { class: 'hero__label' }, 'قازانجی کاڵا (خاڵیص)'),
+        h('div', { class: 'hero__label' }, 'کۆی قازانج (کاڵا + خزمەتگوزاری)'),
         h('div', { class: 'hero__range' }, r.label),
-        h('div', { class: `hero__value${cur.profit < 0 ? ' is-neg' : ''}` }, h('span', { class: 'num' }, money(cur.profit)), h('span', { class: 'unit' }, ' دینار')),
+        h('div', { class: `hero__value${total < 0 ? ' is-neg' : ''}` }, h('span', { class: 'num' }, money(total)), h('span', { class: 'unit' }, ' دینار')),
         h('div', { class: 'hero__meta' }, chip(dProfit), h('span', { class: 'muted', title: rangeLabel(prev) }, 'بەرامبەر ماوەی پێشوو')),
-        h('div', { class: 'hero__sub' }, `ڕێژەی قازانج ${pct(margin(cur.profit, cur.revenue), 1)} لە فرۆشتن`)),
+        h('div', { class: 'hero__sub' }, `کاڵا ${money(cur.profit)} + خزمەتگوزاری ${money(sv.profit)} دینار · ڕێژەی قازانجی کاڵا ${pct(margin(cur.profit, cur.revenue), 1)}`)),
       h('div', { class: 'hero__cells' },
-        cell('فرۆشتنی خاڵیص', money(cur.revenue), chip(dRev)),
+        cell('کۆی فرۆشتن (کاڵا + خزمەتگوزاری)', money(cur.revenue + sv.profit), h('span', { class: 'muted' }, 'خزمەتگوزاری تەنها قازانج تۆمار دەکات')),
+        cell('فرۆشتنی کاڵا (خاڵیص)', money(cur.revenue), chip(dRev)),
+        cell('قازانجی کاڵا', money(cur.profit), h('span', { class: 'muted' }, `ڕێژە ${pct(margin(cur.profit, cur.revenue), 1)}`)),
+        cell('قازانجی خزمەتگوزاری', money(sv.profit), h('span', { class: 'muted' }, `چاکردنەوە ${money(sv.repair_profit)} · کارت ${money(sv.card_profit)}`)),
         cell('تێچووی کاڵای فرۆشراو', money(cur.cost)),
         cell('وەسڵ', money(cur.receipts), h('span', { class: 'muted' }, cur.receipts ? `تێکڕا ${money(avg)} دینار` : '')),
         cell('داشکان', money(cur.discount)),
