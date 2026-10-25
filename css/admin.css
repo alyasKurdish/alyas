@@ -225,5 +225,8 @@
 .svcf__save { min-height: 64px; width: 100%; font-size: 20px; font-weight: 800; justify-content: center; border-radius: 14px; }
 @media (max-width: 640px) { .svcf__row { grid-template-columns: 1fr; } }
 .kpi--today { grid-template-columns: repeat(5, minmax(0, 1fr)); }
-.kpi--today .kpi__value { font-size: 20px; }
+.kpi--today .kpi__value { font-size: 18px; }
+.kpi--today .kpi__cell:first-child { grid-column: 1 / -1; padding-block: 18px 19px; background: var(--pine-100, #E6F2EC); }
+.kpi--today .kpi__cell:first-child .kpi__label { font-size: 15px; color: var(--ink); }
+.kpi--today .kpi__cell:first-child .kpi__value { font-size: 38px; }
 @media (max-width: 1000px) { .kpi--today { grid-template-columns: repeat(2, minmax(0, 1fr)); } .kpi--today .kpi__cell:last-child { grid-column: 1 / -1; } }
