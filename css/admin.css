@@ -38,6 +38,8 @@
 .hero__meta .muted { color: #9FBDB2; }
 .hero__sub { font-size: 13.5px; color: #BCD6CC; }
 .hero__cells { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; background: var(--line); }
+.hero__cell:last-child:nth-child(3n+1) { grid-column: 1 / -1; }
+.hero__cell:last-child:nth-child(3n+2) { grid-column: span 2; }
 .hero__cell { display: flex; flex-direction: column; justify-content: center; gap: 2px; padding: 14px 18px; background: var(--white); min-width: 0; }
 .hero__cell-label { font-size: 13px; font-weight: 600; color: var(--muted); }
 .hero__cell-value { font-size: 20px; font-weight: 800; line-height: 1.4; }
@@ -174,6 +176,8 @@
   .hero__main { padding: 20px 20px; }
   .hero__value { font-size: 44px; }
   .hero__cells { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .hero__cell:last-child:nth-child(3n+1), .hero__cell:last-child:nth-child(3n+2) { grid-column: auto; }
+  .hero__cell:last-child:nth-child(odd) { grid-column: 1 / -1; }
   .toolbar--range { flex-direction: column; align-items: flex-start; }
   .start__steps li { grid-template-columns: auto minmax(0, 1fr); }
   .start__steps li .btn { grid-column: 2; grid-row: auto; justify-self: start; margin-top: 6px; }
