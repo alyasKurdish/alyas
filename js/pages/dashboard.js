@@ -87,9 +87,10 @@ export default async function dashboard(root, ctx) {
       mount(todayBand, h('section', { class: 'today' },
         h('div', { class: 'today__head' }, h('h2', null, 'ئەمڕۆ'), h('span', { class: 'muted' }, fmtLongDate(t))),
         kpiBand([
-          { label: 'فرۆشتنی ئەمڕۆ', value: s.revenue, unit: 'دینار', sub: `${money(s.receipts)} وەسڵ · ${money(s.items)} دانە` },
-          { label: 'قازانجی ئەمڕۆ', value: s.profit, unit: 'دینار', tone: s.profit < 0 ? 'bad' : 'good', sub: s.revenue > 0 ? `ڕێژە ${pct(margin(s.profit, s.revenue), 1)}` : 'هێشتا فرۆشتن نییە' },
+          { label: 'فرۆشتنی کاڵای ئەمڕۆ', value: s.revenue, unit: 'دینار', sub: `${money(s.receipts)} وەسڵ · ${money(s.items)} دانە` },
+          { label: 'قازانجی کاڵای ئەمڕۆ', value: s.profit, unit: 'دینار', tone: s.profit < 0 ? 'bad' : 'good', sub: s.revenue > 0 ? `ڕێژە ${pct(margin(s.profit, s.revenue), 1)}` : 'هێشتا فرۆشتن نییە' },
           { label: 'قازانجی خزمەتگوزاری ئەمڕۆ', value: sv.profit, unit: 'دینار', sub: `چاکردنەوە ${money(sv.repair_profit)} · کارت ${money(sv.card_profit)}` },
+          { label: 'کۆی فرۆشتنی ئەمڕۆ', value: s.revenue + sv.profit, unit: 'دینار', sub: 'کاڵا + قازانجی خزمەتگوزاری' },
           { label: 'کۆی قازانجی ئەمڕۆ', value: s.profit + sv.profit, unit: 'دینار', tone: s.profit + sv.profit < 0 ? 'bad' : 'good', sub: 'کاڵا + خزمەتگوزاری' },
           { label: 'سەرمایەی ماوە لە کۆگا', value: s.stock_value, unit: 'دینار', sub: `${money(s.stock_units)} دانە` },
         ], { className: 'kpi--today' })));
