@@ -168,7 +168,7 @@ export default async function dashboard(root, ctx) {
     const dRev = delta(cur.revenue, before.revenue);
     const avg = cur.receipts > 0 ? Math.round(cur.revenue / cur.receipts) : 0;
     const chip = (d) => (d ? h('span', { class: `chip-delta chip-delta--${d.tone}` }, d.text) : null);
-    mount(heroBox, h('section', { class: 'hero' },
+    mount(heroBox, h('div', { class: 'stack' }, kpiBand([{ label: 'کۆی فرۆشتن (کاڵا + خزمەتگوزاری)', value: cur.revenue + sv.profit, unit: 'دینار', sub: `${r.label} · کاڵا ${money(cur.revenue)} + خزمەتگوزاری ${money(sv.profit)} (خزمەتگوزاری تەنها قازانج تۆمار دەکات)` }], { className: 'kpi--today' }), h('section', { class: 'hero' },
       h('div', { class: 'hero__main' },
         h('div', { class: 'hero__label' }, 'کۆی قازانج (کاڵا + خزمەتگوزاری)'),
         h('div', { class: 'hero__range' }, r.label),
@@ -176,7 +176,6 @@ export default async function dashboard(root, ctx) {
         h('div', { class: 'hero__meta' }, chip(dProfit), h('span', { class: 'muted', title: rangeLabel(prev) }, 'بەرامبەر ماوەی پێشوو')),
         h('div', { class: 'hero__sub' }, `کاڵا ${money(cur.profit)} + خزمەتگوزاری ${money(sv.profit)} دینار · ڕێژەی قازانجی کاڵا ${pct(margin(cur.profit, cur.revenue), 1)}`)),
       h('div', { class: 'hero__cells' },
-        cell('کۆی فرۆشتن (کاڵا + خزمەتگوزاری)', money(cur.revenue + sv.profit), h('span', { class: 'muted' }, 'خزمەتگوزاری تەنها قازانج تۆمار دەکات')),
         cell('فرۆشتنی کاڵا (خاڵیص)', money(cur.revenue), chip(dRev)),
         cell('قازانجی کاڵا', money(cur.profit), h('span', { class: 'muted' }, `ڕێژە ${pct(margin(cur.profit, cur.revenue), 1)}`)),
         cell('قازانجی خزمەتگوزاری', money(sv.profit), h('span', { class: 'muted' }, `چاکردنەوە ${money(sv.repair_profit)} · کارت ${money(sv.card_profit)}`)),
@@ -184,7 +183,7 @@ export default async function dashboard(root, ctx) {
         cell('وەسڵ', money(cur.receipts), h('span', { class: 'muted' }, cur.receipts ? `تێکڕا ${money(avg)} دینار` : '')),
         cell('داشکان', money(cur.discount)),
         cell('گەڕاوە', money(cur.refunds), h('span', { class: 'muted' }, cur.refund_count ? `${money(cur.refund_count)} جار` : '')),
-        cell('کڕینی کاڵا', money(cur.purchases_spent), h('span', { class: 'muted' }, 'کۆی نرخی هاتنەکان')))));
+        cell('کڕینی کاڵا', money(cur.purchases_spent), h('span', { class: 'muted' }, 'کۆی نرخی هاتنەکان'))))));
   }
   const cell = (label, value, extra) => h('div', { class: 'hero__cell' }, h('div', { class: 'hero__cell-label' }, label), h('div', { class: 'hero__cell-value' }, h('span', { class: 'num' }, value), h('span', { class: 'unit' }, ' دینار')), extra || null);
 
