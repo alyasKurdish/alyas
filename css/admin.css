@@ -234,3 +234,22 @@
 .kpi--today .kpi__cell:first-child .kpi__label { font-size: 15px; color: var(--ink); }
 .kpi--today .kpi__cell:first-child .kpi__value { font-size: 38px; }
 @media (max-width: 1000px) { .kpi--today { grid-template-columns: repeat(2, minmax(0, 1fr)); } .kpi--today .kpi__cell:last-child { grid-column: 1 / -1; } }
+
+/* ---------- cash withdrawals + weekly report ---------- */
+.wd-form { padding: 16px 18px 18px; }
+.wd-form .svcf__row { grid-template-columns: 240px 1fr; }
+.wdf__chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.wdf__chip { border: 1.5px solid var(--input-line); background: #fff; color: var(--ink-2); border-radius: 999px; padding: 7px 16px; font: inherit; font-size: 14.5px; font-weight: 600; cursor: pointer; transition: background .15s, color .15s, border-color .15s; }
+.wdf__chip:hover { background: var(--pine-50); }
+.wdf__chip.is-on { background: var(--pine-700); border-color: var(--pine-700); color: #fff; }
+.kpi--wd { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.wk__nav { align-items: center; gap: 10px; }
+.wk__label { font-size: 16px; }
+.wk__spacer { flex: 1 1 auto; }
+.wk__pick { display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 600; color: var(--ink-2); }
+.wk__dayhead { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+.wk__daytitle { margin: 0; font-size: 20px; }
+.wk__day { display: flex; flex-direction: column; gap: 18px; padding-top: 6px; border-top: 2px solid var(--line); }
+.wk__days { max-width: 100%; overflow-x: auto; }
+.seg__btn:disabled { opacity: .4; cursor: not-allowed; }
+@media (max-width: 899px) { .wd-form .svcf__row { grid-template-columns: 1fr; } .kpi--wd { grid-template-columns: minmax(0, 1fr); } .kpi--wd .kpi__cell:first-child { grid-column: auto; } }
