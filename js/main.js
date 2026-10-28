@@ -16,6 +16,8 @@ const ROUTES = [
   { id: 'products', title: 'کاڵاکان', icon: 'box', roles: ['admin'], load: () => import('./pages/products.js') },
   { id: 'inventory', title: 'کۆگا', icon: 'stock', roles: ['admin'], load: () => import('./pages/inventory.js') },
   { id: 'reports', title: 'ڕاپۆرتەکان', icon: 'report', roles: ['admin'], load: () => import('./pages/reports.js') },
+  { id: 'weekly', title: 'هەفتانە', icon: 'calendar', roles: ['admin'], load: () => import('./pages/weekly.js') },
+  { id: 'withdrawals', title: 'پارە ڕاکێشان', icon: 'wallet', roles: ['admin'], load: () => import('./pages/withdrawals.js') },
   { sep: true, roles: ['admin'] },
   { id: 'users', title: 'بەکارهێنەران', icon: 'users', roles: ['admin'], load: () => import('./pages/users.js') },
   { id: 'settings', title: 'ڕێکخستنەکان', icon: 'settings', roles: ['admin'], load: () => import('./pages/settings.js') },
