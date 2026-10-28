@@ -167,6 +167,19 @@ export const SCHEMA = [
   )`,
   `create index if not exists service_entries_created_idx on service_entries (created_at)`,
   `create index if not exists service_entries_user_idx on service_entries (created_by, created_at)`,
+  `create table if not exists cash_withdrawals (
+    id integer primary key autoincrement,
+    amount integer not null check (amount > 0 and amount <= 100000000000),
+    reason text,
+    note text,
+    created_by text references profiles (id),
+    created_at text not null default (${NOW}),
+    client_id text unique,
+    voided_at text,
+    voided_by text references profiles (id),
+    void_reason text
+  )`,
+  `create index if not exists cash_withdrawals_created_idx on cash_withdrawals (created_at)`,
   `insert or ignore into shop_settings (id) values (1)`,
 ];
 
@@ -1275,6 +1288,91 @@ def('service_summary', ANY, async (c, a) => {
       return { day, repair: x.repair || 0, card: x.card || 0, profit: (x.repair || 0) + (x.card || 0) };
     }),
   };
+});
+
+/* ---- cash withdrawals (admin only) + weekly report ---- */
+const withdrawalJson = (w) => ({
+  id: w.id, amount: w.amount, reason: w.reason, note: w.note, created_at: w.created_at, by: w.by_name ?? null,
+  voided: w.voided_at !== null && w.voided_at !== undefined, voided_at: w.voided_at, void_reason: w.void_reason,
+});
+const WITHDRAWAL_SQL = `select w.*, (select coalesce(nullif(p.full_name, ''), p.username) from profiles p where p.id = w.created_by) as by_name from cash_withdrawals w`;
+
+def('add_withdrawal', ANY, async (c, a) => {
+  await c.admin();
+  const amount = toInt(a.p_amount);
+  if (amount === null || amount < 1 || amount > 100000000000) fail('BAD_AMOUNT');
+  const reason = nul(clip(str(a.p_reason).trim(), 60));
+  const note = nul(clip(str(a.p_note).trim(), 200));
+  const clientId = toUuid(a.p_client_id);
+  return c.db.tx(async (t) => {
+    if (clientId) {
+      const dup = await t.get(`${WITHDRAWAL_SQL} where w.client_id = ?`, [clientId]);
+      if (dup) return withdrawalJson(dup);
+    }
+    const id = (await t.run('insert into cash_withdrawals (amount, reason, note, created_by, client_id) values (?,?,?,?,?)', [amount, reason, note, c.uid, clientId])).lastId;
+    return withdrawalJson(await t.get(`${WITHDRAWAL_SQL} where w.id = ?`, [id]));
+  });
+});
+
+// any period; also returns fixed totals for today / this month so the page can always show them
+def('list_withdrawals', ANY, async (c, a) => {
+  await c.admin();
+  const b = bounds(a.p_from, a.p_to);
+  const today = todayBaghdad();
+  const bt = bounds(today, today);
+  const bm = bounds(today.slice(0, 8) + '01', today);
+  const limit = Math.max(1, Math.min(toInt(a.p_limit) ?? 200, 1000));
+  const offset = Math.max(0, toInt(a.p_offset) ?? 0);
+  const sum = 'select count(*) as cnt, coalesce(sum(amount),0) as total from cash_withdrawals where created_at >= ? and created_at < ? and voided_at is null';
+  const [[t], [td], [mo], rows] = await c.db.many([
+    [sum, b], [sum, bt], [sum, bm],
+    [`${WITHDRAWAL_SQL} where w.created_at >= ? and w.created_at < ? order by w.created_at desc, w.id desc limit ? offset ?`, [...b, limit, offset]],
+  ]);
+  return {
+    count: t.cnt, total: t.total, today_total: td.total, today_count: td.cnt, month_total: mo.total, month_count: mo.cnt,
+    rows: rows.map(withdrawalJson),
+  };
+});
+
+def('void_withdrawal', ANY, async (c, a) => {
+  await c.admin();
+  const id = toInt(a.p_id);
+  return c.db.tx(async (t) => {
+    const w = await t.get('select * from cash_withdrawals where id = ?', [id]);
+    if (!w) fail('NOT_FOUND');
+    if (w.voided_at === null) {
+      await t.run(`update cash_withdrawals set voided_at = ${NOW}, voided_by = ?, void_reason = ? where id = ?`,
+        [c.uid, nul(clip(str(a.p_reason).trim(), 200)), id]);
+    }
+    return withdrawalJson(await t.get(`${WITHDRAWAL_SQL} where w.id = ?`, [id]));
+  });
+});
+
+// one row per day: goods + services + withdrawals (used by the weekly report)
+def('week_report', ANY, async (c, a) => {
+  await c.admin();
+  const b = bounds(a.p_from, a.p_to);
+  const [goods, sv, wd] = await Promise.all([
+    RPC.report_daily.fn(c, a),
+    RPC.service_summary.fn(c, a),
+    c.db.all(`select date(created_at, '+3 hours') as day, count(*) as cnt, sum(amount) as total
+      from cash_withdrawals where created_at >= ? and created_at < ? and voided_at is null group by 1`, b),
+  ]);
+  const S = new Map(sv.daily.map((x) => [x.day, x]));
+  const W = new Map(wd.map((x) => [x.day, x]));
+  return goods.map((g) => {
+    const s = S.get(g.day) || {};
+    const w = W.get(g.day) || {};
+    const serviceProfit = s.profit || 0;
+    const withdrawn = w.total || 0;
+    const totalSales = g.revenue + serviceProfit;
+    return {
+      day: g.day, receipts: g.receipts, items: g.items, goods_revenue: g.revenue, goods_profit: g.profit,
+      service_profit: serviceProfit, repair_profit: s.repair || 0, card_profit: s.card || 0,
+      total_sales: totalSales, profit: g.profit + serviceProfit,
+      withdrawn, withdrawn_count: w.cnt || 0, left: totalSales - withdrawn,
+    };
+  });
 });
 
 /* ===================================================================================================
